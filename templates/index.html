@@ -1,115 +1,472 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Finance Tracker</title>
+    <title>Finance Tracker Pro</title>
     <link rel="manifest" href="/manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .entry-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8">Performance Finance Tracker</h1>
-        
-        <!-- Summary Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-xl font-semibold mb-4">Summary</h2>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="text-center">
-                    <p class="text-gray-600">Total Income</p>
-                    <p class="text-2xl font-bold text-green-600" id="totalIncome">$0</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-gray-600">Total Expenses</p>
-                    <p class="text-2xl font-bold text-red-600" id="totalExpenses">$0</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-gray-600">Net Profit</p>
-                    <p class="text-2xl font-bold text-blue-600" id="netProfit">$0</p>
-                </div>
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Finance Tracker Pro</h1>
+            <div class="space-x-4">
+                <button onclick="exportData('all')" 
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    Export All Data
+                </button>
+                <button onclick="toggleDateFilter()" 
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                    Filter by Date
+                </button>
             </div>
         </div>
 
-        <!-- Input Forms -->
+        <!-- Date Filter -->
+        <div id="dateFilter" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700">Start Date</label>
+                    <input type="date" id="filterStartDate" 
+                           class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-gray-700">End Date</label>
+                    <input type="date" id="filterEndDate" 
+                           class="w-full border rounded-lg px-3 py-2">
+                </div>
+            </div>
+            <button onclick="applyDateFilter()" 
+                    class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Apply Filter
+            </button>
+        </div>
+<!-- Add this after the header and before the charts section -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="col-span-2 md:col-span-4 bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-sm font-medium text-gray-500">All Time Summary</h3>
+        <div class="grid grid-cols-3 gap-4 mt-2">
+            <div>
+                <p class="text-3xl font-bold text-green-600" id="totalIncome">£0</p>
+                <p class="text-sm text-gray-500">Total Income</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-red-600" id="totalExpenses">£0</p>
+                <p class="text-sm text-gray-500">Total Expenses</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold" id="totalNet">£0</p>
+                <p class="text-sm text-gray-500">Net Total</p>
+            </div>
+        </div>
+    </div>
+    <!-- Current Week -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-sm font-medium text-gray-500">This Week</h3>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-green-600" id="currentWeekIncome">£0</p>
+            <p class="text-sm text-gray-500">Income</p>
+        </div>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-red-600" id="currentWeekExpenses">£0</p>
+            <p class="text-sm text-gray-500">Expenses</p>
+        </div>
+        <p class="mt-2 text-sm">Net: <span id="currentWeekNet" class="font-bold">£0</span></p>
+    </div>
+
+    <!-- Current Month -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-sm font-medium text-gray-500">This Month</h3>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-green-600" id="currentMonthIncome">£0</p>
+            <p class="text-sm text-gray-500">Income</p>
+        </div>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-red-600" id="currentMonthExpenses">£0</p>
+            <p class="text-sm text-gray-500">Expenses</p>
+        </div>
+        <p class="mt-2 text-sm">Net: <span id="currentMonthNet" class="font-bold">£0</span></p>
+    </div>
+
+    <!-- Weekly Average -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-sm font-medium text-gray-500">Weekly Average</h3>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-green-600" id="weeklyAvgIncome">£0</p>
+            <p class="text-sm text-gray-500">Income</p>
+        </div>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-red-600" id="weeklyAvgExpenses">£0</p>
+            <p class="text-sm text-gray-500">Expenses</p>
+        </div>
+        <p class="mt-2 text-sm">Net: <span id="weeklyAvgNet" class="font-bold">£0</span></p>
+    </div>
+
+    <!-- Monthly Average -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-sm font-medium text-gray-500">Monthly Average</h3>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-green-600" id="monthlyAvgIncome">£0</p>
+            <p class="text-sm text-gray-500">Income</p>
+        </div>
+        <div class="mt-2">
+            <p class="text-2xl font-bold text-red-600" id="monthlyAvgExpenses">£0</p>
+            <p class="text-sm text-gray-500">Expenses</p>
+        </div>
+        <p class="mt-2 text-sm">Net: <span id="monthlyAvgNet" class="font-bold">£0</span></p>
+    </div>
+</div>
+        <!-- Input Forms and Lists -->
         <div class="grid md:grid-cols-2 gap-8">
-            <!-- Income Form -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold mb-4">Add Income</h2>
-                <form id="incomeForm" class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700">Amount</label>
-                        <input type="number" name="amount" required
-                            class="w-full border rounded-lg px-3 py-2">
+            <!-- Income Section -->
+            <div>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                    <h2 class="text-xl font-semibold mb-4">Add Income</h2>
+                    <form id="incomeForm" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700">Date</label>
+                            <input type="date" name="date" required
+                                class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Amount (£)</label>
+                            <input type="number" name="amount" step="0.01" required
+                                class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Category</label>
+                            <select name="category" required
+                                class="w-full border rounded-lg px-3 py-2">
+                                <option value="cards">Cards</option>
+                                <option value="cash_tips">Cash Tips</option>
+                                <option value="card_payments">Card Payments</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Venue</label>
+                            <input type="text" name="venue"
+                                class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Notes</label>
+                            <textarea name="notes"
+                                class="w-full border rounded-lg px-3 py-2"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+                            Add Income
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Income List -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Recent Income</h2>
+                    <div id="incomeList" class="entry-list">
+                        <!-- Entries will be added here dynamically -->
                     </div>
-                    <div>
-                        <label class="block text-gray-700">Venue</label>
-                        <input type="text" name="venue" required
-                            class="w-full border rounded-lg px-3 py-2">
+                    <div class="mt-4 pt-4 border-t">
+                        <h3 class="font-semibold">Income Summary</h3>
+                        <p>Total: <span id="incomeSummaryTotal" class="font-bold text-green-600">£0.00</span></p>
+                        <p>Count: <span id="incomeSummaryCount" class="font-bold">0</span> entries</p>
                     </div>
-                    <div>
-                        <label class="block text-gray-700">Category</label>
-                        <select name="category" required
-                            class="w-full border rounded-lg px-3 py-2">
-                            <option value="performance">Performance</option>
-                            <option value="private">Private Event</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700">Notes</label>
-                        <textarea name="notes"
-                            class="w-full border rounded-lg px-3 py-2"></textarea>
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-                        Add Income
-                    </button>
-                </form>
+                </div>
             </div>
 
-            <!-- Expense Form -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold mb-4">Add Expense</h2>
-                <form id="expenseForm" class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700">Amount</label>
-                        <input type="number" name="amount" required
-                            class="w-full border rounded-lg px-3 py-2">
+            <!-- Expense Section -->
+            <div>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                    <h2 class="text-xl font-semibold mb-4">Add Expense</h2>
+                    <form id="expenseForm" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700">Date</label>
+                            <input type="date" name="date" required
+                                class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Amount (£)</label>
+                            <input type="number" name="amount" step="0.01" required
+                                class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Category</label>
+                            <select name="category" required
+                                class="w-full border rounded-lg px-3 py-2">
+                                <option value="travel">Travel</option>
+                                <option value="beauty">Beauty</option>
+                                <option value="recovery">Recovery</option>
+                                <option value="food_drinks">Food/Drinks</option>
+                                <option value="costumes">Costumes</option>
+                                <option value="training">Training</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Description</label>
+                            <textarea name="description"
+                                class="w-full border rounded-lg px-3 py-2"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                            Add Expense
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Expense List -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Recent Expenses</h2>
+                    <div id="expenseList" class="entry-list">
+                        <!-- Entries will be added here dynamically -->
                     </div>
-                    <div>
-                        <label class="block text-gray-700">Category</label>
-                        <select name="category" required
-                            class="w-full border rounded-lg px-3 py-2">
-                            <option value="costumes">Costumes</option>
-                            <option value="travel">Travel</option>
-                            <option value="marketing">Marketing</option>
-                            <option value="equipment">Equipment</option>
-                            <option value="other">Other</option>
-                        </select>
+                    <div class="mt-4 pt-4 border-t">
+                        <h3 class="font-semibold">Expense Summary</h3>
+                        <p>Total: <span id="expenseSummaryTotal" class="font-bold text-red-600">£0.00</span></p>
+                        <p>Count: <span id="expenseSummaryCount" class="font-bold">0</span> entries</p>
                     </div>
-                    <div>
-                        <label class="block text-gray-700">Description</label>
-                        <textarea name="description"
-                            class="w-full border rounded-lg px-3 py-2"></textarea>
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
-                        Add Expense
-                    </button>
-                </form>
+                </div>
             </div>
+
+                    <!-- Charts -->
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Daily Income vs Expenses</h2>
+                <canvas id="dailyChart"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Category Breakdown</h2>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
         </div>
     </div>
 
     <script>
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => console.log('ServiceWorker registered'))
-                .catch(err => console.log('ServiceWorker registration failed: ', err));
+        // Utility functions
+        function formatGBP(number) {
+            return new Intl.NumberFormat('en-GB', {
+                style: 'currency',
+                currency: 'GBP'
+            }).format(number);
         }
 
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Charts
+        let dailyChart = null;
+        let categoryChart = null;
+
+        function initializeCharts() {
+            // Daily chart
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            dailyChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Income',
+                            borderColor: '#059669',
+                            data: []
+                        },
+                        {
+                            label: 'Expenses',
+                            borderColor: '#DC2626',
+                            data: []
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '£' + value
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Category chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#059669', '#DC2626', '#2563EB',
+                            '#D97706', '#7C3AED', '#DB2777'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        // Date filter functions
+        function toggleDateFilter() {
+            const filterDiv = document.getElementById('dateFilter');
+            filterDiv.classList.toggle('hidden');
+        }
+
+        function applyDateFilter() {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            refreshData(startDate, endDate);
+        }
+        function updateMetrics(data) {
+            document.getElementById('totalIncome').textContent = formatGBP(data.totals.income);
+            document.getElementById('totalExpenses').textContent = formatGBP(data.totals.expenses);
+            document.getElementById('totalNet').textContent = formatGBP(data.totals.net);
+            // Update current week
+            document.getElementById('currentWeekIncome').textContent = formatGBP(data.current.week.income);
+            document.getElementById('currentWeekExpenses').textContent = formatGBP(data.current.week.expenses);
+            document.getElementById('currentWeekNet').textContent = formatGBP(data.current.week.net);
+            
+            // Update current month
+            document.getElementById('currentMonthIncome').textContent = formatGBP(data.current.month.income);
+            document.getElementById('currentMonthExpenses').textContent = formatGBP(data.current.month.expenses);
+            document.getElementById('currentMonthNet').textContent = formatGBP(data.current.month.net);
+            
+            // Update weekly averages
+            document.getElementById('weeklyAvgIncome').textContent = formatGBP(data.averages.weekly.income);
+            document.getElementById('weeklyAvgExpenses').textContent = formatGBP(data.averages.weekly.expenses);
+            document.getElementById('weeklyAvgNet').textContent = formatGBP(data.averages.weekly.net);
+            
+            // Update monthly averages
+            document.getElementById('monthlyAvgIncome').textContent = formatGBP(data.averages.monthly.income);
+            document.getElementById('monthlyAvgExpenses').textContent = formatGBP(data.averages.monthly.expenses);
+            document.getElementById('monthlyAvgNet').textContent = formatGBP(data.averages.monthly.net);
+}
+        // Data refresh functions
+        async function refreshData(startDate = null, endDate = null) {
+            let queryParams = '';
+            if (startDate && endDate) {
+                queryParams = `?start_date=${startDate}&end_date=${endDate}`;
+            }
+            const metricsResponse = await fetch('/api/metrics');
+            const metricsData = await metricsResponse.json();
+            updateMetrics(metricsData);
+
+            // Fetch and update income list
+            const incomeResponse = await fetch(`/api/income${queryParams}`);
+            const incomes = await incomeResponse.json();
+            updateIncomeList(incomes);
+
+            // Fetch and update expense list
+            const expenseResponse = await fetch(`/api/expenses${queryParams}`);
+            const expenses = await expenseResponse.json();
+            updateExpenseList(expenses);
+
+            // Update charts
+            const trendsResponse = await fetch(`/api/trends${queryParams}`);
+            const trends = await trendsResponse.json();
+            updateCharts(trends);
+        }
+
+        function updateIncomeList(incomes) {
+            const list = document.getElementById('incomeList');
+            let total = 0;
+            
+            list.innerHTML = incomes.map(income => {
+                total += income.amount;
+                return `
+                    <div class="border-b py-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-semibold">${formatGBP(income.amount)}</div>
+                                <div class="text-sm text-gray-600">
+                                    ${formatDate(income.date)} - ${income.category}
+                                </div>
+                                ${income.venue ? `<div class="text-sm">Venue: ${income.venue}</div>` : ''}
+                                ${income.notes ? `<div class="text-sm text-gray-500">${income.notes}</div>` : ''}
+                            </div>
+                            <button onclick="deleteIncome(${income.id})" 
+                                    class="text-red-600 hover:text-red-800">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('incomeSummaryTotal').textContent = formatGBP(total);
+            document.getElementById('incomeSummaryCount').textContent = incomes.length;
+        }
+
+        function updateExpenseList(expenses) {
+            const list = document.getElementById('expenseList');
+            let total = 0;
+            
+            list.innerHTML = expenses.map(expense => {
+                total += expense.amount;
+                return `
+                    <div class="border-b py-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-semibold">${formatGBP(expense.amount)}</div>
+                                <div class="text-sm text-gray-600">
+                                    ${formatDate(expense.date)} - ${expense.category}
+                                </div>
+                                ${expense.description ? `<div class="text-sm text-gray-500">${expense.description}</div>` : ''}
+                            </div>
+                            <button onclick="deleteExpense(${expense.id})" 
+                                    class="text-red-600 hover:text-red-800">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('expenseSummaryTotal').textContent = formatGBP(total);
+            document.getElementById('expenseSummaryCount').textContent = expenses.length;
+        }
+
+        function updateCharts(trends) {
+            // Update daily chart
+            dailyChart.data.labels = trends.income.map(entry => formatDate(entry.date));
+            dailyChart.data.datasets[0].data = trends.income.map(entry => entry.total);
+            dailyChart.data.datasets[1].data = trends.expenses.map(entry => entry.total);
+            dailyChart.update();
+
+            // Update category chart
+            const combinedData = [...trends.income, ...trends.expenses];
+            const categories = [...new Set(combinedData.map(entry => entry.category))];
+            const categoryTotals = categories.map(category => {
+                return combinedData
+                    .filter(entry => entry.category === category)
+                    .reduce((sum, entry) => sum + entry.total, 0);
+            });
+
+            categoryChart.data.labels = categories;
+            categoryChart.data.datasets[0].data = categoryTotals;
+            categoryChart.update();
+        }
         // Form submission handlers
         document.getElementById('incomeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -127,10 +484,16 @@
                 
                 if (response.ok) {
                     e.target.reset();
-                    updateSummary();
+                    setDefaultDates();
+                    refreshData();
+                    alert('Income added successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error:', error);
+                alert('Failed to add income. Please try again.');
             }
         });
 
@@ -150,32 +513,95 @@
                 
                 if (response.ok) {
                     e.target.reset();
-                    updateSummary();
+                    setDefaultDates();
+                    refreshData();
+                    alert('Expense added successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error:', error);
+                alert('Failed to add expense. Please try again.');
             }
         });
 
-        // Update summary function
-        async function updateSummary() {
+        // Delete functions
+        async function deleteIncome(id) {
+            if (!confirm('Are you sure you want to delete this income entry?')) return;
+            
             try {
-                const response = await fetch('/api/summary');
-                const data = await response.json();
+                const response = await fetch(`/api/delete/income/${id}`, {
+                    method: 'DELETE'
+                });
                 
-                document.getElementById('totalIncome').textContent = 
-                    `$${data.total_income.toFixed(2)}`;
-                document.getElementById('totalExpenses').textContent = 
-                    `$${data.total_expenses.toFixed(2)}`;
-                document.getElementById('netProfit').textContent = 
-                    `$${data.net_profit.toFixed(2)}`;
+                if (response.ok) {
+                    refreshData();
+                    alert('Income deleted successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
             } catch (error) {
                 console.error('Error:', error);
+                alert('Failed to delete income. Please try again.');
             }
         }
 
-        // Initial summary update
-        updateSummary();
+        async function deleteExpense(id) {
+            if (!confirm('Are you sure you want to delete this expense entry?')) return;
+            
+            try {
+                const response = await fetch(`/api/delete/expense/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    refreshData();
+                    alert('Expense deleted successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to delete expense. Please try again.');
+            }
+        }
+
+        // Export function
+        function exportData(type) {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            
+            let url = `/api/export/csv?type=${type}`;
+            if (startDate && endDate) {
+                url += `&start_date=${startDate}&end_date=${endDate}`;
+            }
+            
+            window.location.href = url;
+        }
+
+        // Initialize
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('#incomeForm [name="date"]').value = today;
+            document.querySelector('#expenseForm [name="date"]').value = today;
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDates();
+            initializeCharts();
+            refreshData();
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => console.log('ServiceWorker registered'))
+                .catch(err => console.error('ServiceWorker registration failed: ', err));
+        }
     </script>
 </body>
 </html>
