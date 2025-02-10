@@ -1,0 +1,181 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Finance Tracker</title>
+    <link rel="manifest" href="/manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Performance Finance Tracker</h1>
+        
+        <!-- Summary Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Summary</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <p class="text-gray-600">Total Income</p>
+                    <p class="text-2xl font-bold text-green-600" id="totalIncome">$0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-600">Total Expenses</p>
+                    <p class="text-2xl font-bold text-red-600" id="totalExpenses">$0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-600">Net Profit</p>
+                    <p class="text-2xl font-bold text-blue-600" id="netProfit">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Forms -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Income Form -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Add Income</h2>
+                <form id="incomeForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700">Amount</label>
+                        <input type="number" name="amount" required
+                            class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Venue</label>
+                        <input type="text" name="venue" required
+                            class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Category</label>
+                        <select name="category" required
+                            class="w-full border rounded-lg px-3 py-2">
+                            <option value="performance">Performance</option>
+                            <option value="private">Private Event</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Notes</label>
+                        <textarea name="notes"
+                            class="w-full border rounded-lg px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+                        Add Income
+                    </button>
+                </form>
+            </div>
+
+            <!-- Expense Form -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Add Expense</h2>
+                <form id="expenseForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700">Amount</label>
+                        <input type="number" name="amount" required
+                            class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Category</label>
+                        <select name="category" required
+                            class="w-full border rounded-lg px-3 py-2">
+                            <option value="costumes">Costumes</option>
+                            <option value="travel">Travel</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Description</label>
+                        <textarea name="description"
+                            class="w-full border rounded-lg px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                        Add Expense
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => console.log('ServiceWorker registered'))
+                .catch(err => console.log('ServiceWorker registration failed: ', err));
+        }
+
+        // Form submission handlers
+        document.getElementById('incomeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/income', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                if (response.ok) {
+                    e.target.reset();
+                    updateSummary();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                if (response.ok) {
+                    e.target.reset();
+                    updateSummary();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Update summary function
+        async function updateSummary() {
+            try {
+                const response = await fetch('/api/summary');
+                const data = await response.json();
+                
+                document.getElementById('totalIncome').textContent = 
+                    `$${data.total_income.toFixed(2)}`;
+                document.getElementById('totalExpenses').textContent = 
+                    `$${data.total_expenses.toFixed(2)}`;
+                document.getElementById('netProfit').textContent = 
+                    `$${data.net_profit.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Initial summary update
+        updateSummary();
+    </script>
+</body>
+</html>
