@@ -47,40 +47,49 @@ def init_db():
     try:
         with app.app_context():
             # Create tables if they don't exist
+            print("Creating database tables...")
             db.create_all()
-            
-            # Check and add timestamp columns
-            from sqlalchemy import text
-            
-            # Add created_at and modified_at to income table
+            print("Database tables created successfully")
+
+            # Check and add timestamp columns to income table
             try:
+                print("Adding timestamp columns to income table...")
                 db.session.execute(text(
-                    'ALTER TABLE income ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    'ALTER TABLE income ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'
                 ))
                 db.session.execute(text(
-                    'ALTER TABLE income ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    'ALTER TABLE income ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'
                 ))
+                print("Successfully added timestamp columns to income table")
             except Exception as e:
-                print(f"Income table migration: {str(e)}")
+                print(f"Note: Income table timestamps already exist or other error: {str(e)}")
                 db.session.rollback()
 
-            # Add created_at and modified_at to expense table
+            # Check and add timestamp columns to expense table
             try:
+                print("Adding timestamp columns to expense table...")
                 db.session.execute(text(
-                    'ALTER TABLE expense ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    'ALTER TABLE expense ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'
                 ))
                 db.session.execute(text(
-                    'ALTER TABLE expense ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    'ALTER TABLE expense ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'
                 ))
+                print("Successfully added timestamp columns to expense table")
             except Exception as e:
-                print(f"Expense table migration: {str(e)}")
+                print(f"Note: Expense table timestamps already exist or other error: {str(e)}")
                 db.session.rollback()
 
+            # Commit all changes
             db.session.commit()
+            print("Database initialization completed successfully")
 
     except Exception as e:
         print(f"Database initialization error: {str(e)}")
         db.session.rollback()
+        raise e
+
+with app.app_context():
+    init_db()
 
 def check_column_exists(table_name, column_name):
     """Check if a column exists in a table"""
