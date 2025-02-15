@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker Pro</title>
+    <title>Eva Precious Financials</title>
     <link rel="manifest" href="/manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,7 +17,72 @@
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Finance Tracker Pro</h1>
+            <div class="w-full max-w-2xl">
+                <!-- New logo SVG goes here -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+                        <!-- Definitions for reusable elements -->
+                        <defs>
+                          <!-- Gradient for text -->
+                          <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#FF69B4;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#DA70D6;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#FF69B4;stop-opacity:1" />
+                            <animate attributeName="x1" from="0%" to="100%" dur="3s" repeatCount="indefinite" />
+                            <animate attributeName="x2" from="100%" to="200%" dur="3s" repeatCount="indefinite" />
+                          </linearGradient>
+                          
+                          <!-- Sparkle star -->
+                          <path id="star" d="M 0,-5 L 1,-1 5,0 1,1 0,5 -1,1 -5,0 -1,-1 Z" />
+                          
+                          <!-- Filter for glow effect -->
+                          <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                              <feMergeNode in="coloredBlur"/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
+                        </defs>
+                        
+                        <!-- Background decorative elements -->
+                        <rect width="800" height="200" fill="white"/>
+                        <path d="M0,100 Q200,20 400,100 T800,100" fill="none" stroke="url(#textGradient)" stroke-width="2" opacity="0.3"/>
+                        
+                        <!-- Main text -->
+                        <text x="400" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="url(#textGradient)" filter="url(#glow)">
+                          Eva's Finance App
+                        </text>
+                        
+                        <!-- Decorative sparkles -->
+                        <g class="sparkles">
+                          <!-- Animated sparkles -->
+                          <use href="#star" transform="translate(300,60)" fill="#FFD700">
+                            <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0s"/>
+                          </use>
+                          <use href="#star" transform="translate(500,60)" fill="#FFD700">
+                            <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+                          </use>
+                          <use href="#star" transform="translate(350,140)" fill="#FFD700">
+                            <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="1s"/>
+                          </use>
+                          <use href="#star" transform="translate(450,140)" fill="#FFD700">
+                            <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+                          </use>
+                          
+                          <!-- Small decorative stars -->
+                          <use href="#star" transform="translate(250,80) scale(0.5)" fill="#FF69B4" opacity="0.6"/>
+                          <use href="#star" transform="translate(550,80) scale(0.5)" fill="#FF69B4" opacity="0.6"/>
+                          <use href="#star" transform="translate(320,150) scale(0.5)" fill="#FF69B4" opacity="0.6"/>
+                          <use href="#star" transform="translate(480,150) scale(0.5)" fill="#FF69B4" opacity="0.6"/>
+                        </g>
+                        
+                        <!-- Decorative curves -->
+                        <path d="M250,160 Q400,140 550,160" fill="none" stroke="#FF69B4" stroke-width="2" opacity="0.3"/>
+                        <path d="M250,165 Q400,145 550,165" fill="none" stroke="#DA70D6" stroke-width="2" opacity="0.2"/>
+                      </svg>
+                </svg>
+            </div>
             <div class="space-x-4">
                 <button onclick="exportData('all')" 
                         class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
