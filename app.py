@@ -42,6 +42,46 @@ class Expense(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     modified_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+def init_db():
+    """Initialize database and handle migrations"""
+    try:
+        with app.app_context():
+            # Create tables if they don't exist
+            db.create_all()
+            
+            # Check and add timestamp columns
+            from sqlalchemy import text
+            
+            # Add created_at and modified_at to income table
+            try:
+                db.session.execute(text(
+                    'ALTER TABLE income ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                ))
+                db.session.execute(text(
+                    'ALTER TABLE income ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                ))
+            except Exception as e:
+                print(f"Income table migration: {str(e)}")
+                db.session.rollback()
+
+            # Add created_at and modified_at to expense table
+            try:
+                db.session.execute(text(
+                    'ALTER TABLE expense ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                ))
+                db.session.execute(text(
+                    'ALTER TABLE expense ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                ))
+            except Exception as e:
+                print(f"Expense table migration: {str(e)}")
+                db.session.rollback()
+
+            db.session.commit()
+
+    except Exception as e:
+        print(f"Database initialization error: {str(e)}")
+        db.session.rollback()
+
 def check_column_exists(table_name, column_name):
     """Check if a column exists in a table"""
     try:
@@ -407,7 +447,8 @@ def service_worker():
 def manifest():
     return app.send_static_file('manifest.json')
 
+# Call init_db when app starts
 if __name__ == '__main__':
-    init_db()  # Run database initialization and migrations
+    init_db()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
