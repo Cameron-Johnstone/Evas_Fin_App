@@ -1,0 +1,6 @@
+.entry-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Add any other custom styles here */

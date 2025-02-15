@@ -1,12 +1,17 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, text
 import os
 import csv
 from io import StringIO
 import json
 from collections import defaultdict
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 database_url = os.getenv('DATABASE_URL', 'sqlite:///finance.db')
@@ -36,6 +41,90 @@ class Expense(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     modified_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+def check_column_exists(table_name, column_name):
+    """Check if a column exists in a table"""
+    try:
+        with db.engine.connect() as conn:
+            # This query works for both PostgreSQL and SQLite
+            if database_url.startswith('postgresql://'):
+                query = text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = :table 
+                    AND column_name = :column
+                """)
+            else:  # SQLite
+                query = text(f"SELECT * FROM pragma_table_info('{table_name}') WHERE name = :column")
+            
+            result = conn.execute(query, {'table': table_name, 'column': column_name})
+            return bool(result.first())
+    except Exception as e:
+        logger.error(f"Error checking column {column_name} in {table_name}: {str(e)}")
+        return False
+
+def init_db():
+    """Initialize database and handle migrations"""
+    try:
+        with app.app_context():
+            # Create tables if they don't exist
+            db.create_all()
+            logger.info("Database tables created successfully")
+
+            # Check and add created_at column to income table if it doesn't exist
+            if not check_column_exists('income', 'created_at'):
+                logger.info("Adding created_at column to income table")
+                if database_url.startswith('postgresql://'):
+                    db.session.execute(text(
+                        'ALTER TABLE income ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    ))
+                else:  # SQLite
+                    db.session.execute(text(
+                        'ALTER TABLE income ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP'
+                    ))
+
+            # Check and add modified_at column to income table if it doesn't exist
+            if not check_column_exists('income', 'modified_at'):
+                logger.info("Adding modified_at column to income table")
+                if database_url.startswith('postgresql://'):
+                    db.session.execute(text(
+                        'ALTER TABLE income ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    ))
+                else:  # SQLite
+                    db.session.execute(text(
+                        'ALTER TABLE income ADD COLUMN modified_at DATETIME DEFAULT CURRENT_TIMESTAMP'
+                    ))
+
+            # Check and add timestamp columns to expense table if they don't exist
+            if not check_column_exists('expense', 'created_at'):
+                logger.info("Adding created_at column to expense table")
+                if database_url.startswith('postgresql://'):
+                    db.session.execute(text(
+                        'ALTER TABLE expense ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    ))
+                else:  # SQLite
+                    db.session.execute(text(
+                        'ALTER TABLE expense ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP'
+                    ))
+
+            if not check_column_exists('expense', 'modified_at'):
+                logger.info("Adding modified_at column to expense table")
+                if database_url.startswith('postgresql://'):
+                    db.session.execute(text(
+                        'ALTER TABLE expense ADD COLUMN modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                    ))
+                else:  # SQLite
+                    db.session.execute(text(
+                        'ALTER TABLE expense ADD COLUMN modified_at DATETIME DEFAULT CURRENT_TIMESTAMP'
+                    ))
+
+            db.session.commit()
+            logger.info("Database migration completed successfully")
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Database initialization error: {str(e)}")
+        raise
 
 @app.route('/')
 def home():
@@ -84,11 +173,12 @@ def get_expenses():
         'category': e.category,
         'description': e.description
     } for e in expenses])
+
 @app.route('/api/metrics', methods=['GET'])
 def get_metrics():
     now = datetime.utcnow()
     
-     # Total calculations (all time)
+    # Total calculations (all time)
     total_income = db.session.query(func.sum(Income.amount)).scalar() or 0
     total_expenses = db.session.query(func.sum(Expense.amount)).scalar() or 0
     
@@ -135,7 +225,7 @@ def get_metrics():
     monthly_avg_expenses = monthly_avg_expenses / 3
 
     return jsonify({
-                'totals': {
+        'totals': {
             'income': total_income,
             'expenses': total_expenses,
             'net': total_income - total_expenses
@@ -165,6 +255,7 @@ def get_metrics():
             }
         }
     })
+
 @app.route('/api/trends', methods=['GET'])
 def get_trends():
     # Get daily totals for the last 30 days
@@ -317,7 +408,6 @@ def manifest():
     return app.send_static_file('manifest.json')
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    init_db()  # Run database initialization and migrations
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
